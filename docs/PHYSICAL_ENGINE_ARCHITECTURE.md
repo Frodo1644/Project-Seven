@@ -51,6 +51,10 @@ Loop: `delay(P) → one-pole loss → one-pole HF loss → 4 × all-pass dispers
   B by 1/L² automatically.
 - **Loss**: one filter pass per round trip, so the T60 gain is referred to the
   fundamental (`g = 10^(−3/(T60·f₀))`), not to the sample rate.
+- **Tension modulation**: a displaced string is longer, so its tension and pitch rise.
+  The loop delay is scaled by `1/(1 + beta A^2)` with `beta = pi^2 E A_core/(8 L^2 T)`
+  and `A` the physical pluck depth scaled by the decay of the sensed envelope, clamped
+  to 25 cents. Hard attacks therefore start slightly sharp and settle.
 - **Excitation**: the pick imposes a triangular displacement over its contact width,
   box-averaged by pick thickness, then released through a one-pole whose corner comes
   from the contact time (`≈ 0.24 ms + 0.9 ms·(1 − velocity)`). Velocity therefore changes

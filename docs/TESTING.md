@@ -6,7 +6,7 @@ Project Seven has comprehensive automated tests covering audio engine behaviour,
 
 ## Engine Tests
 
-The engine test suite runs 111 checks with 0 failures at 48 kHz. A further 27 checks
+The engine test suite runs 111 checks with 0 failures at 48 kHz. A further 30 checks
 verify the physical model directly (`ProjectSevenPhysicsTests`).
 
 ### Physics probe (`ProjectSevenPhysicsTests`)
@@ -20,6 +20,7 @@ verify the physical model directly (`ProjectSevenPhysicsTests`).
 - structural coupling (`getStructureVelocity()`, string `Z0`);
 - flux-linkage nonlinearity and the derived humbucker capacitance/resonance;
 - output peaks for a single note and a seven-string chord;
+- tension modulation: attack drift and settled pitch, hard vs soft pluck;
 - CPU for 7 voices over 10 s;
 - WAV renders written to the working directory's `artifacts/` folder.
 

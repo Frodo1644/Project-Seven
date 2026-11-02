@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   aperture sensing over the 2.5 in humbucker footprint.
 - `GuitarSpec.h`: single parameter registry with MEASURED / DERIVED / ESTIMATED
   provenance for every physical constant.
+- Tension modulation: `df/f = beta A^2` with `beta = pi^2 E A_core / (8 L^2 T)` derived
+  from string geometry, so a hard pluck starts a few cents sharp and settles as the note
+  decays. Drift scales with picking force (measured 4.5 cents hard vs 2.2 cents soft on
+  the low B).
 - `ProjectSevenPhysicsTests`: 27 physics checks plus WAV renders and a CPU measurement.
 - Documentation: `EXISTING_ENGINE_AUDIT.md`, `PHYSICAL_ENGINE_ARCHITECTURE.md`,
   `PHYSICAL_COUPLING_SPECIFICATION.md`, `PHYSICAL_MODEL_VALIDATION.md`,

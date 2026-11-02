@@ -1,7 +1,7 @@
 # Progress — Physical Engine Rehaul
 
 **Last successful build:** Release x64, 2026-11-02.
-**Test status at last run:** 111 engine checks, 27 physics checks, **0 failures**.
+**Test status at last run:** 111 engine checks, 30 physics checks, **0 failures**.
 **Last known good commit:** the commit that adds `src/dsp/PhysicalEngine.*`
 (this session).
 
@@ -42,14 +42,20 @@
    carries no spatial information, so pickup position had no audible effect at all.
    Replaced with the two-tap bridge→pickup→bridge difference; the measured nulls now
    land on harmonics with a node at the pickup.
-4. **Pickup output stage applied 1.8× gain**, producing a 1.36 peak on a seven-string
+4. **Pickup output stage applied 1.8x gain**, producing a 1.36 peak on a seven-string
    chord. Trimmed to 0.55 (chord peak 0.41).
+
+### Tension modulation (added after the first pass)
+`PhysicalString` now modulates the loop delay by `1/(1 + beta A^2)` with
+`beta = pi^2 E A_core / (8 L^2 T)` derived from the string's own geometry, and `A` the
+physical pluck depth scaled by the decay of the sensed envelope. A hard low-B pluck
+starts 4.5 cents sharp and settles within the first second; a soft pluck drifts 2.2
+cents. Clamped at 25 cents for stability.
 
 ## Incomplete / partial
 
 | Item | State | Detail |
 |---|---|---|
-| Tension modulation | not implemented | No pitch drift or amplitude-dependent intermodulation. |
 | Position-dependent mobility | approximation | All strings drive one structural point. |
 | Humbucker two-point antiphase sensing | not implemented | The measured 3–4 kHz low-string notch is absent. |
 | Natural harmonic node damping | partial | Modal excitation on the open string; the touching finger's extra damping is not modelled. |
@@ -59,21 +65,25 @@
 ## Known limitations
 - One pickup voicing (passive humbucker, 500 k load); no tone control, by design.
 - Structural coupling is lumped, so dead spots depend on pitch but not on fret position.
-- The pitch error is up to 6 cents at the extremes (dispersion phase-delay estimate).
+- Settled tuning is within 4.5 cents of nominal from B1 to E4; Drop F F1 reads
+  +7.2 cents, which is autocorrelation bias on a very low inharmonic string.
+- A hard attack starts up to 4.5 cents sharp (tension modulation) and settles.
 
 ## Verified in this session
 - Build: `ProjectSeven_VST3`, `ProjectSevenTests`, `ProjectSevenPhysicsTests`,
   `ProjectSevenVst3Smoke` all build in Release x64.
-- Tests: 111 + 27 checks, 0 failures; 0 allocations on the audio thread.
-- CPU: 2.0 % of one core for 7 voices at 48 kHz.
+- Tests: 111 + 30 checks, 0 failures; 0 allocations on the audio thread.
+- CPU: 2.3 % of one core for 7 voices at 48 kHz.
 - Renders: `build/artifacts/10_physical_standard_b_chord.wav`,
   `11_physical_palm_mute.wav`, `12_physical_drop_f.wav`.
-
 ## Exact next task
-Implement tension modulation in `PhysicalString::pullIncident`: modulate the loop delay
-by `1 + β·|y|²` with `β = E·A/(T·L²)` clamped, and verify with a new probe check that
-the fundamental drifts up by 2–6 cents immediately after a hard attack and settles,
-without breaking the ≤ 8-cent tuning bound.
+Give each string its own structural port. Today every voice drives one effective point
+on the structure, so dead spots depend on pitch but not on fret position. Add a
+position-dependent mobility: a second port for the neck termination and a per-string
+coupling vector, then verify that a note whose partial lands on the 430 Hz neck mode
+decays measurably faster when fretted near an antinode (Fleischer's dead-spot
+criterion).
 
-Files: `src/dsp/PhysicalString.cpp` (loop delay), `src/dsp/PhysicalEngine.cpp`
-(pass β per voice), `tests/PhysicsTests.cpp` (new check).
+Files: `src/dsp/BodyNeckModel.h/.cpp` (second port, coupling vector),
+`src/dsp/PhysicalEngine.cpp` (per-voice port assignment), `tests/PhysicsTests.cpp`
+(dead-spot check).

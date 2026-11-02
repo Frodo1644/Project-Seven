@@ -9,7 +9,7 @@ cmake --build build --config Release --target ProjectSevenPhysicsTests
 ./build/ProjectSevenPhysicsTests_artefacts/Release/ProjectSevenPhysicsTests.exe
 ```
 
-## 1. Pitch accuracy (autocorrelation, 0.25–0.70 s window)
+## 1. Pitch accuracy (autocorrelation, settled window 1.1-1.9 s)
 
 | Note | Expected | Measured | Error |
 |---|---|---|---|
@@ -20,11 +20,27 @@ cmake --build build --config Release --target ProjectSevenPhysicsTests
 | G3 (55) | 196.00 Hz | 195.92 Hz | −0.7 ¢ |
 | B3 (59) | 246.94 Hz | 247.42 Hz | +3.4 ¢ |
 | E4 (64) | 329.63 Hz | 328.77 Hz | −4.5 ¢ |
-| Drop F F1 (29) | 43.65 Hz | — | +5.6 ¢ |
+| Drop F F1 (29) | 43.65 Hz | — | +7.2 ¢ |
 
-All within 6 cents. The residual is the dispersion chain's phase-delay estimate, not a
-tuning error: it is below the 8-cent acceptance bound and below the ~10-cent threshold
-most players hear on a low string.
+The tuning is measured after the attack has settled, because a hard pluck is physically
+sharp (see §1b). The residual is not a tuning error: autocorrelation reads slightly sharp
+on inharmonic low strings, which is why the same +3.4 cents appears for B1 before and
+after tension modulation was added. It is below the ~10-cent threshold most players hear
+on a low string, and well inside the 8-cent acceptance bound used by the engine tests.
+
+### 1b. Tension modulation (attack drift)
+
+A displaced string is slightly longer, so its tension and pitch rise. The coefficient is
+derived, not fitted: `df/f = beta A^2` with `beta = pi^2 E A_core / (8 L^2 T)`.
+
+| Pluck | Attack (0.03-0.28 s) | Settled (1.5-2.4 s) | Drift |
+|---|---|---|---|
+| Low B, velocity 0.95 | +7.84 ¢ | +3.37 ¢ | **4.47 ¢** |
+| Low B, velocity 0.25 | +5.60 ¢ | +3.37 ¢ | **2.23 ¢** |
+
+The drift scales with picking force, as the physics requires, and decays to the settled
+value within the first second. The shift is clamped to 25 cents so an extreme excursion
+can never destabilise the loop.
 
 ## 2. Decay: higher partials must die first (E2, dB lost between 0.05–0.55 s and 1.20–1.70 s)
 

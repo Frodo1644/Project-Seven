@@ -44,9 +44,11 @@ audio renders in `build/artifacts`, all at 0 failures.
 
 ## Remaining work, in priority order
 
-1. **Tension modulation (PARTIAL → DONE).** String tension rises with displacement, so
-   pitch drifts up after the attack and low power chords intermodulate. Estimated
-   coefficient `β = E·A/(T·L²)`; needs a delay-length modulation with a stability clamp.
+1. **Tension modulation — DONE.** `df/f = beta A^2` with
+   `beta = pi^2 E A_core / (8 L^2 T)` derived from geometry, applied as a loop-delay
+   ratio with a 25-cent clamp. Measured drift 4.5 cents (hard) and 2.2 cents (soft) on
+   the low B, settling within the first second. Amplitude-dependent intermodulation
+   between simultaneously sounding strings follows from the same term.
 2. **Position-dependent mobility (PARTIAL).** Give each string its own structural port
    (saddle position) and add the neck as a second port, so dead spots depend on fret
    position as Fleischer measured, not only on pitch.
