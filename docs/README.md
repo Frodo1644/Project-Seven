@@ -1,101 +1,90 @@
-# Project Seven - Enhanced Physics Engine (v1.1.0)
+# Project Seven
 
-I've made significant improvements to the physics simulation to address your feedback:
+A seven-string electric guitar instrument for Windows x64, built as a VST3 plugin. It
+produces its sound in real time from a coupled physical model of a solid-body guitar.
+There are no samples anywhere in the project.
 
-## Key Improvements
+## What it is
 
-### 1. Natural Sustain (Notes Ring After Release)
-- **Before**: Notes stopped immediately when you released the MIDI key
-- **After**: Strings continue to vibrate and ring out naturally, just like a real electric guitar
-- **How it works**: The string model now has a sustain mode that keeps the internal vibration going. The output gain fades out slowly (0.15-0.3 seconds release time), but the string itself keeps ringing at its natural decay rate
-- **Result**: You can now play notes and let them sustain even after releasing the key, giving that characteristic electric guitar sustain
+MIDI goes in, a clean electric-guitar DI signal comes out. No amplifier, cabinet, EQ,
+drive, gate, compression or modulation — the intended chain is
 
-### 2. Djenty Palm Mute (Proper Chug Sound)
-- **Before**: Palm mute sounded weak and small
-- **After**: Palm mutes now have a strong percussive attack with tight, controlled decay - the characteristic "djent" chug sound
-- **How it works**:
-  - Increased transient attack by 1.4x for palm mute
-  - Lowered mute threshold from 0.88 to 0.75 (less choked, more open)
-  - Tighter high-frequency damping keeps the low-end punchy
-  - Extended release time (0.15s) lets the chug ring slightly
-- **Result**: Palm muted notes now have that powerful, djenty character with strong attack and controlled decay
+```
+MIDI -> Project Seven -> amp sim / IR -> your mix
+```
 
-### 3. Improved Loop Filter (Brighter, Longer Sustain)
-- **Before**: Loop filter cut off high frequencies too aggressively (3900 Hz base)
-- **After**: Much gentler filtering (5200-10000 Hz base) preserves brightness and sustain
-- **How it works**:
-  - Higher cutoff frequencies let more high-frequency content through
-  - High partials ring longer, giving that bright electric guitar character
-  - Steel string physics modeled with appropriate damping
-- **Result**: Notes are brighter, more sustaining, and sound more like a real electric guitar
+## The physical model
 
-### 4. Realistic T60 Decay Times
-- **Before**: T60 formula gave 2.2-11.5 seconds
-- **After**: T60 formula gives 3.0-12.0 seconds for more realistic electric guitar sustain
-- **How it works**:
-  - Base T60: 7.5 * pow(82.407/freq, 0.35)
-  - Low strings (E1) get ~12 seconds of sustain
-  - High strings (E4) get ~3 seconds
-  - Palm mute reduces T60 to 0.15-0.60 seconds for tight chugs
-- **Result**: More realistic sustain characteristics across the freboard
+The engine is not a synthesiser with a guitar-shaped interface. Six subsystems are
+modelled and mechanically coupled:
 
-## Technical Details
+1. **Strings** — stiff digital waveguides. Mass, tension, wave impedance and
+   inharmonicity are derived per string from gauge, material and the sounding pitch:
+   `T = 4L²f²μ`, `Z₀ = √(Tμ)`, `B = π³Ed⁴/(64TL²)`. Fretting shortens the vibrating
+   length and raises B by `1/L²` automatically.
+2. **Picking** — a pick/string collision: the pick's thickness sets the contact width,
+   velocity sets the contact time, so playing harder changes the attack spectrum and
+   not just the level.
+3. **Structure** — nine measured/reduced modes of body, neck and bridge, expressed as a
+   positive-real mechanical admittance. Every string drives it and every string is
+   driven back by it, so decay, dead spots and inter-string interaction are emergent.
+4. **Pickup** — variable-reluctance sensing over the humbucker's 2.5 in aperture
+   (two-tap difference, so nulls fall on harmonics with a node at the pickup), a
+   nonlinear flux-linkage map, then the passive coil/cable network (L 8.73 H,
+   f_res 2.76 kHz, eddy pole).
+5. **Articulation** — palm muting and note-off remove energy at the contact; they are
+   not output envelopes.
+6. **Harmonics** — natural and pinch harmonics as modal excitation of the string.
 
-### Physics Model Enhancements
-- **Loop Filter**: fc1Base 5200-10000 Hz, fc1Mute 1800 Hz (was 3900/1150)
-- **High Shelf**: fc2Base 22000 Hz, fc2Mute 1200 Hz (was 19000/900)
-- **Loop Gain**: Base 0.9995, Mute 0.992, Sustain 0.9999 (longer decay)
-- **Transient**: Boosted 1.4x for palm mute djent attack
-- **Release Time**: 0.15s (palm mute), 0.3s (open) for natural ring
+Details: `PHYSICAL_ENGINE_ARCHITECTURE.md`, `PHYSICAL_COUPLING_SPECIFICATION.md`.
+Measured numbers and sources: `../research/PHYSICAL_MODEL_RESEARCH.md`.
+Validation results: `PHYSICAL_MODEL_VALIDATION.md`.
 
-### Sustain Model
-- Strings continue vibrating internally after note-off
-- Output gain fades slowly (controlled by release time)
-- Sustain mode enables extended decay (loopGainSustain = 0.9999)
-- When sustain pedal (CC64) is held, strings ring even longer
+## Controls
 
-### Test Results
-- All 111 tests pass (no regressions)
-- CPU: 0.72% real time for 7 voices (slightly improved from 0.74%)
-- Zero audio-thread allocations maintained
-- VST3 smoke test passes
+| Control | Function |
+|---|---|
+| Tuning preset | Standard B, Drop A, Drop G, Drop F, Custom |
+| String 1…7 | Independent pitch per string (MIDI note) |
+| Articulation | Open, Palm Muted, Natural Harmonic, Pinch Harmonic |
+| Pick Position | Distance from the bridge, % of scale length |
+| Pick Intensity | Pick stiffness/force, affects attack brightness |
+| Pickup Position | Distance from the bridge, % of scale length |
+| Palm Mute | Amount of palm contact |
+| Polyphony | 1…24 voices |
+| Pitch Bend Range | 0…12 semitones |
+| Output Level | −24…+6 dB |
 
-## Playing Tips
+Keyswitches: C0 open, C#0 palm mute, D0 natural harmonic, D#0 pinch harmonic.
+CC20 selects articulation latched; CC64 sustain; CC120/121/123 all-notes-off.
 
-### For Djent Palm Mutes
-1. Use high velocity (0.8-1.0)
-2. Select Palm Mute articulation (or use C#0 keyswitch)
-3. The strong pick attack creates the characteristic djent chug
-4. Adjust palm mute parameter for tighter/looser feel
+## Requirements
 
-### For Sustain
-1. Play a note and release the key
-2. The string will continue to ring at its natural decay rate
-3. Use sustain pedal (CC64) to hold notes even longer
-4. Low strings sustain longer than high strings (realistic behavior)
+- Windows x64, a VST3 host (developed against Cubase Pro 15).
+- No Visual C++ redistributable and no development tools needed: the plugin links the
+  static MSVC runtime.
+- No sample library.
 
-### For Clean Tones
-1. Use Open articulation
-2. Moderate velocity for clear, sustained notes
-3. The improved loop filter gives brighter, more present tone
+## Building from source
 
-## Files Modified
-- `Source/dsp/StringModel.h` - added sustain members
-- `Source/dsp/StringModel.cpp` - improved loop filter, T60, sustain mode
-- `Source/dsp/SevenAudioEngine.cpp` - improved note-off, sustain pedal, palm mute
-- `Tests/TestMain.cpp` - added sustain and palm mute tests
+See `BUILD.md`. Short version:
 
-## Documentation Updated
-- `README.md` - updated with physics improvements and playing tips
-- `ARCHITECTURE.md` - documented new sustain model and physics parameters
-- `TESTING.md` - documented new tests
-- `CHANGELOG.md` - documented v1.1.0 release
+```
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+cmake --build build --config Release --target ProjectSeven_VST3
+```
 
-## Distribution
-- `ProjectSeven-1.1.0-win64.zip` (3.9 MB) ready for download
-- Contains improved VST3 with enhanced physics
-- All documentation included
+## Typical performance and tuning
 
----
+Standard B (B1 E2 A2 D3 G3 B3 E4), Drop A (A1 E2 A2 D3 G3 B3 E4),
+Drop G (G1 D2 G2 C3 F3 A3 D4), Drop F (F1 C2 F2 Bb2 Eb3 G3 C4).
 
-The plugin now sounds much more like a real electric guitar with proper sustain and djenty palm mute capability. The physics engine has been significantly improved while maintaining the clean DI signal with no built-in effects.
+## Known limitations
+
+- One pickup voicing (passive humbucker, 500 k load); no tone control, by design.
+- Structural coupling uses one effective point, so dead spots depend on pitch but not
+  on fret position.
+- No tension modulation, so there is no amplitude-dependent pitch drift.
+- Body damping, pickup Q and structural coupling strengths are estimated, not measured;
+  they are centralised and labelled in `../src/dsp/GuitarSpec.h` and
+  `../research/PHYSICAL_MODEL_RESEARCH.md`.

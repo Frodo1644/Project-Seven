@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "dsp/PhysicalEngine.h"
 #include "dsp/PickupModel.h"
 #include "dsp/StringModel.h"
 #include "params/Parameters.h"
@@ -32,6 +33,10 @@ public:
     void setSustainPedal (bool down);
 
     void render (float* output, int numSamples);
+
+    // True when the coupled physical engine renders (the default).
+    bool isPhysicalEngineActive() const noexcept { return ! parameters.useLegacyEngine; }
+    const PhysicalEngine& getPhysicalEngine() const noexcept { return physical; }
 
     int getActiveVoiceCount() const noexcept;
     int getLastAssignedString() const noexcept { return lastAssignedString.load (std::memory_order_relaxed); }
@@ -71,6 +76,7 @@ private:
     double fs = 48000.0;
     std::vector<Voice> voices;
     PickupModel pickup;
+    PhysicalEngine physical;
     EngineParameters parameters;
     float bendNormalized = 0.0f;
     bool sustainDown = false;

@@ -80,6 +80,11 @@ struct EngineParameters
     int polyphony = 12;
     int bendRange = 2;
     float outputGain = 0.5f;
+
+    // The coupled physical engine is the instrument. The original 1.x engine is
+    // preserved, unmodified, behind this flag so both can be rendered from the
+    // same MIDI performance for A/B validation (see docs/EXISTING_ENGINE_AUDIT.md).
+    bool useLegacyEngine = false;
 };
 
 } // namespace ps

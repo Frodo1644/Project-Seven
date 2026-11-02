@@ -9,9 +9,9 @@ namespace ps
 {
 void SevenAudioEngine::prepare (double sampleRate, int maxBlockSize)
 {
-    juce::ignoreUnused (maxBlockSize);
-
     fs = std::max (8000.0, sampleRate);
+
+    physical.prepare (fs, maxBlockSize);
 
     const int maxLoopSamples = static_cast<int> (fs / 15.0) + 128;
 
@@ -41,6 +41,7 @@ void SevenAudioEngine::reset()
     }
 
     pickup.reset();
+    physical.reset();
     sustainDown = false;
     bendNormalized = 0.0f;
     noteCounter = 0;
@@ -52,6 +53,7 @@ void SevenAudioEngine::reset()
 void SevenAudioEngine::setParameters (const EngineParameters& newParameters)
 {
     parameters = newParameters;
+    physical.setParameters (newParameters);
 
     for (auto& voice : voices)
     {
@@ -88,6 +90,15 @@ float SevenAudioEngine::baseInharmonicityForString (int stringIndex) const noexc
 
 void SevenAudioEngine::noteOn (int midiNote, float velocity)
 {
+    if (! parameters.useLegacyEngine)
+    {
+        physical.noteOn (midiNote, velocity);
+        lastAssignedString = physical.getLastAssignedString();
+        lastAssignedFret = physical.getLastAssignedFret();
+        lastHarmonic = physical.getLastHarmonic();
+        return;
+    }
+
     if (midiNote < 0 || midiNote > 127 || voices.empty())
         return;
 
@@ -239,6 +250,12 @@ void SevenAudioEngine::startVoice (Voice& voice,
 
 void SevenAudioEngine::noteOff (int midiNote)
 {
+    if (! parameters.useLegacyEngine)
+    {
+        physical.noteOff (midiNote);
+        return;
+    }
+
     for (auto& voice : voices)
     {
         if (! voice.active || voice.dying || voice.note != midiNote)
@@ -259,6 +276,8 @@ void SevenAudioEngine::noteOff (int midiNote)
 
 void SevenAudioEngine::allNotesOff (bool immediate)
 {
+    physical.allNotesOff (immediate);
+
     sustainDown = false;
 
     for (auto& voice : voices)
@@ -276,6 +295,8 @@ void SevenAudioEngine::allNotesOff (bool immediate)
 
 void SevenAudioEngine::setSustainPedal (bool down)
 {
+    physical.setSustainPedal (down);
+
     if (sustainDown == down)
         return;
 
@@ -299,6 +320,7 @@ void SevenAudioEngine::setSustainPedal (bool down)
 void SevenAudioEngine::setPitchBend (float normalizedBend)
 {
     bendNormalized = juce::jlimit (-1.0f, 1.0f, normalizedBend);
+    physical.setPitchBend (bendNormalized);
 
     for (auto& voice : voices)
         if (voice.active)
@@ -309,6 +331,12 @@ void SevenAudioEngine::render (float* output, int numSamples)
 {
     if (output == nullptr || numSamples <= 0)
         return;
+
+    if (! parameters.useLegacyEngine)
+    {
+        physical.render (output, numSamples);
+        return;
+    }
 
     std::fill (output, output + numSamples, 0.0f);
 
@@ -330,6 +358,9 @@ void SevenAudioEngine::render (float* output, int numSamples)
 
 int SevenAudioEngine::getActiveVoiceCount() const noexcept
 {
+    if (! parameters.useLegacyEngine)
+        return physical.getActiveVoiceCount();
+
     int count = 0;
     for (const auto& voice : voices)
         if (voice.active && ! voice.dying)

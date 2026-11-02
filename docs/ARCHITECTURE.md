@@ -1,5 +1,11 @@
 # Architecture - Project Seven
 
+> **Version 2.0.** The engine now runs a coupled physical model. The sections below
+> from "String Model" onward describe the 1.x engine, which is preserved unmodified in
+> `src/dsp/StringModel.*` and `src/dsp/PickupModel.*` and remains selectable via
+> `EngineParameters::useLegacyEngine`. The current architecture is described in
+> `PHYSICAL_ENGINE_ARCHITECTURE.md` and `PHYSICAL_COUPLING_SPECIFICATION.md`.
+
 ## Overview
 
 Project Seven is a physically modelled seven-string electric guitar VST3 instrument. It uses digital waveguide synthesis (extended Karplus-Strong) to model steel strings, with magnetic pickup sensing and electrical response modelling.
@@ -176,3 +182,36 @@ The VST3 bundle includes:
 - No external dependencies (static runtime)
 
 Install to VST3 scan path (e.g., `C:/Program Files/Common Files/VST3/`).
+
+---
+
+## Appendix: current engine (2.0)
+
+```
+MIDI -> PhysicalEngine -> 36 x PhysicalString (stiff waveguide)
+              |                    |  incident wave f+
+              |                    v
+              +----> BodyNeckModel (9 modes, shared) ----> f-
+              |                    |  shared velocity v
+              |                    v
+              |             back into every string
+              |
+              +--> per-voice flux lambda(y) -> EMF e = -dlambda/dt
+                                  |
+                                  v
+                        MagneticPickupModel (RLC + eddy pole)
+                                  |
+                                  v
+                              clean DI output
+```
+
+| Component | Role |
+|---|---|
+| `GuitarSpec.h` | Physical parameter registry (geometry, mass, E, T, Z0, B) |
+| `PhysicalString` | Stiff waveguide, pick collision, gesture damping, aperture sensing |
+| `BodyNeckModel` | Nine-mode positive-real structural admittance and junction solver |
+| `MagneticPickupModel` | Flux linkage law and passive humbucker electrical network |
+| `PhysicalEngine` | Voice pool, articulation, coupled render loop |
+| `SevenAudioEngine` | Façade; dispatches to the physical engine or the legacy engine |
+
+The old string model is no longer on the audio path unless `useLegacyEngine` is set.

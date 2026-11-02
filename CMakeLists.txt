@@ -47,6 +47,10 @@ add_library(projectseven_core STATIC
     src/params/PresetManager.cpp
     src/dsp/StringModel.cpp
     src/dsp/PickupModel.cpp
+    src/dsp/BodyNeckModel.cpp
+    src/dsp/PhysicalString.cpp
+    src/dsp/MagneticPickupModel.cpp
+    src/dsp/PhysicalEngine.cpp
     src/dsp/SevenAudioEngine.cpp
     src/core/PluginProcessor.cpp
     src/core/PluginEditor.cpp
@@ -127,6 +131,28 @@ if(PROJECT_SEVEN_BUILD_TESTS)
 
     add_test(NAME ProjectSevenTests COMMAND ProjectSevenTests)
     set_tests_properties(ProjectSevenTests PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        TIMEOUT 300
+    )
+endif()
+
+
+if(PROJECT_SEVEN_BUILD_TESTS)
+    juce_add_console_app(ProjectSevenPhysicsTests PRODUCT_NAME "ProjectSevenPhysicsTests")
+
+    target_sources(ProjectSevenPhysicsTests PRIVATE
+        tests/PhysicsTests.cpp
+    )
+
+    target_link_libraries(ProjectSevenPhysicsTests PRIVATE
+        projectseven_core
+        juce::juce_audio_formats
+        juce::juce_audio_utils
+        juce::juce_recommended_config_flags
+    )
+
+    add_test(NAME ProjectSevenPhysicsTests COMMAND ProjectSevenPhysicsTests)
+    set_tests_properties(ProjectSevenPhysicsTests PROPERTIES
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         TIMEOUT 300
     )

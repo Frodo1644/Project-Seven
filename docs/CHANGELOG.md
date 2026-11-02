@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-11-02
+
+### Added
+- Coupled physical engine (`PhysicalEngine`) replacing the independent voice mixdown.
+- `BodyNeckModel`: nine-mode positive-real structural admittance, measured body modes
+  (55.3 / 160.1 / 189.4 / 300.5 / 369.7 Hz) plus a measured 430 Hz neck mode.
+  Every string drives it and receives its response, so string-structure and
+  string-string coupling are real rather than mixed.
+- `MagneticPickupModel`: variable-reluctance flux linkage `λ = λ₀(1 + y/g + (y/g)²)`,
+  EMF as `−dλ/dt`, passive humbucker RLC (L 8.73 H, C 381 pF derived, f_res 2.76 kHz)
+  and an eddy-current pole.
+- `PhysicalString`: stiff waveguide with physically derived inharmonicity, tension and
+  wave impedance; pick/string collision with thickness and velocity dependence;
+  aperture sensing over the 2.5 in humbucker footprint.
+- `GuitarSpec.h`: single parameter registry with MEASURED / DERIVED / ESTIMATED
+  provenance for every physical constant.
+- `ProjectSevenPhysicsTests`: 27 physics checks plus WAV renders and a CPU measurement.
+- Documentation: `EXISTING_ENGINE_AUDIT.md`, `PHYSICAL_ENGINE_ARCHITECTURE.md`,
+  `PHYSICAL_COUPLING_SPECIFICATION.md`, `PHYSICAL_MODEL_VALIDATION.md`,
+  `PHYSICS_ENGINE_REHAUL_ROADMAP.md`, `PROGRESS.md`,
+  `../research/PHYSICAL_MODEL_RESEARCH.md`.
+
+### Changed
+- The output no longer passes through a fixed "body resonance" filter cascade. A
+  magnetic pickup does not sense body motion; body character now comes from the
+  structural coupling instead.
+- Palm mute and note-off remove energy from the string rather than fading an output
+  gain.
+- Pickup position now produces a true position comb with nulls on harmonics that have a
+  node at the pickup.
+
+### Fixed
+- Loop loss was converted from T60 using the sample rate instead of the round-trip
+  rate, making sustain roughly `fs/f₀` times too long and masking the error behind a
+  loop-gain floor.
+- Structural junction history was mis-indexed (`F[n−1]` where `F[n−2]` was required),
+  allowing the modes to re-inject energy.
+- Aperture sensing read a single travelling-wave direction and therefore carried no
+  positional information at all.
+- Pickup output stage applied 1.8x gain; seven-string chords peaked at 1.36. Trimmed to
+  0.55 (chord peak 0.41).
+
+### Preserved
+- The 1.x engine (`StringModel`, `PickupModel`) is unchanged and selectable through
+  `EngineParameters::useLegacyEngine` for A/B comparison.
+
 ## [Unreleased]
 
 ### Added

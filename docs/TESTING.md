@@ -6,7 +6,31 @@ Project Seven has comprehensive automated tests covering audio engine behaviour,
 
 ## Engine Tests
 
-The engine test suite runs 111 checks with 0 failures at 48 kHz.
+The engine test suite runs 111 checks with 0 failures at 48 kHz. A further 27 checks
+verify the physical model directly (`ProjectSevenPhysicsTests`).
+
+### Physics probe (`ProjectSevenPhysicsTests`)
+
+`tests/PhysicsTests.cpp` drives `PhysicalEngine` headlessly and reports measured values:
+
+- decay envelope per 0.25 s for open and palm-muted notes;
+- pitch accuracy in cents for B1-E4 and Drop F F1;
+- partial-by-partial decay of E2 (higher partials must die first);
+- pickup position comb (bridge vs neck, partial amplitudes);
+- structural coupling (`getStructureVelocity()`, string `Z0`);
+- flux-linkage nonlinearity and the derived humbucker capacitance/resonance;
+- output peaks for a single note and a seven-string chord;
+- CPU for 7 voices over 10 s;
+- WAV renders written to the working directory's `artifacts/` folder.
+
+Run it with:
+
+```
+cmake --build build --config Release --target ProjectSevenPhysicsTests
+./build/ProjectSevenPhysicsTests_artefacts/Release/ProjectSevenPhysicsTests.exe
+```
+
+Measured results are recorded in `PHYSICAL_MODEL_VALIDATION.md`.
 
 ### Categories
 
