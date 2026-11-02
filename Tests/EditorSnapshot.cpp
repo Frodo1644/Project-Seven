@@ -1,7 +1,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "PluginEditor.h"
-#include "PluginProcessor.h"
+#include "core/PluginProcessor.h"
 
 // Offline development tool: renders the editor to a PNG without a host.
 int main (int argc, char** argv)

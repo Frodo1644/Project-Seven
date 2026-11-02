@@ -12,7 +12,7 @@
 #include <juce_dsp/juce_dsp.h>
 #include <juce_events/juce_events.h>
 
-#include "PluginProcessor.h"
+#include "core/PluginProcessor.h"
 #include "dsp/SevenAudioEngine.h"
 #include "params/Parameters.h"
 #include "params/PresetManager.h"
