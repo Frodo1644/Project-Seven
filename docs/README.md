@@ -22,7 +22,9 @@ modelled and mechanically coupled:
    inharmonicity are derived per string from gauge, material and the sounding pitch:
    `T = 4L²f²μ`, `Z₀ = √(Tμ)`, `B = π³Ed⁴/(64TL²)`. Fretting shortens the vibrating
    length and raises B by `1/L²` automatically. Stretching also modulates tension, so
-   hard attacks start a few cents sharp and settle.
+   hard attacks start a few cents sharp and settle. The stopped end is loaded by the
+   neck's own modes, so a note loses more energy to the neck at the nut than when fretted
+   high — the measured dead-spot mechanism, and it is partial-selective.
 2. **Picking** — a pick/string collision: the pick's thickness sets the contact width,
    velocity sets the contact time, so playing harder changes the attack spectrum and
    not just the level.

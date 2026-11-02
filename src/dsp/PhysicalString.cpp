@@ -28,6 +28,7 @@ void PhysicalString::prepare (double sampleRate, int maxLoopSamples)
     bufferMask = size - 1;
     delayLine.assign (static_cast<size_t> (bufferSize), 0.0f);
     shapeScratch.assign (static_cast<size_t> (bufferSize / 2), 0.0f);
+    neckPort.prepare (fs);
     reset();
 }
 
@@ -44,6 +45,7 @@ void PhysicalString::reset()
     lastAmplitude = 0.0f;
     incidentOut = 0.0f;
     dampCurrent = 0.0f;
+    neckPort.reset();
     std::fill (delayLine.begin(), delayLine.end(), 0.0f);
 }
 
@@ -79,6 +81,9 @@ void PhysicalString::start (const Setup& setup,
     tensionBeta = (piValue * piValue) * design.youngsModulus * coreArea
                 / (8.0 * vibratingLength * vibratingLength * std::max (1.0, state.tension));
 
+    neckPort.reset();
+    neckPort.setPosition (static_cast<double> (setup.fretRatio));
+
     double targetFrequency = std::max (10.0, state.frequency);
     targetFrequency = std::min (targetFrequency, std::min (4000.0, fs * 0.45));
 
@@ -111,7 +116,10 @@ void PhysicalString::start (const Setup& setup,
     // once per sample, so the T60 gain is referred to the fundamental:
     //   g^(T60 * f0) = 10^-3   =>   g = 10^(-3 / (T60 * f0))
     // (Using fs here would make the string ring ~fs/f0 times too long.)
-    const double t60Internal = clampd (12.0 * std::pow (82.407 / targetFrequency, 0.26), 4.0, 16.0);
+    double t60Internal = clampd (12.0 * std::pow (82.407 / targetFrequency, 0.26), 4.0, 16.0);
+    if (setup.harmonicNumber >= 2)
+        t60Internal *= 0.62;                    // the fingertip damps the touched node
+    t60Internal /= (1.0 + 0.010 * std::max (0.0f, setup.fretNumber));  // fret contact loss
     loopLossInternal = static_cast<float> (std::pow (10.0, -3.0 / (t60Internal * targetFrequency)));
 
     // Palm/release damping: ESTIMATED T60 from the physical process of a hand
@@ -162,7 +170,12 @@ void PhysicalString::start (const Setup& setup,
     }
 
     dispersionCoeff = static_cast<float> (-apMagnitude);
-    delayBase = clampd (delayBase, 2.0, static_cast<double> (maxLoop - 10));
+
+    // The neck termination adds phase, so its delay is measured and removed from
+    // the loop length: tuning stays correct while the fret's mobility changes.
+    const double neckPhase = neckPort.phaseDelayAt (kTwoPi / totalDelay, waveImpedance);
+    filterPhaseDelay += neckPhase;
+    delayBase = clampd (totalDelay - filterPhaseDelay, 2.0, static_cast<double> (maxLoop - 10));
     smoothDelay = delayBase;
     baseTotalDelay = delayBase + filterPhaseDelay;
 
@@ -171,16 +184,28 @@ void PhysicalString::start (const Setup& setup,
     // The pickup averages the string over its pole footprint (Tillman;
     // Lemme).  Width is a measured 2.5 in for a humbucker, expressed as a
     // fraction of the *vibrating* length so fretting moves the comb correctly.
-    const double apertureFraction = clampd (setup.apertureWidthMetres / vibratingLength, 0.01, 0.30);
     const double pickupFraction = clampd (
         static_cast<double> (setup.pickupPosition) * (phys::kScaleLengthMetres / vibratingLength),
         0.01, 0.45);
 
-    apertureTaps = 5;
-    for (int i = 0; i < apertureTaps; ++i)
+    // Two coils, each with a 5.5 mm pole aperture, 19 mm apart. Their signals add
+    // (magnets inverted, windings antiphase), so the pair produces the measured
+    // humbucker notch where the spacing is an odd multiple of a half wavelength:
+    // n = (2k+1) L / spacing, about 3 kHz on the low E.
+    apertureTaps = 6;
     {
-        const double offset = (static_cast<double> (i) - 2.0) * 0.25 * apertureFraction;
-        apertureFractions[i] = static_cast<float> (clampd (pickupFraction + offset, 0.004, 0.60));
+        const double coilHalfSpacing = 0.0095 / vibratingLength;
+        const double poleHalf = 0.00275 / vibratingLength;
+        int tap = 0;
+        for (int coil = 0; coil < 2; ++coil)
+        {
+            const double centre = pickupFraction + (coil == 0 ? -coilHalfSpacing : coilHalfSpacing);
+            for (int k = 0; k < 3; ++k)
+            {
+                const double offset = (static_cast<double> (k) - 1.0) * poleHalf;
+                apertureFractions[tap++] = static_cast<float> (clampd (centre + offset, 0.004, 0.60));
+            }
+        }
     }
 
     // --- Pick / string collision ------------------------------------------
@@ -300,6 +325,7 @@ void PhysicalString::start (const Setup& setup,
     incidentOut = 0.0f;
     senseEnvelope = 0.0f;
     senseReference = 0.0f;
+    tensionShiftCents = 0.0f;
 }
 
 void PhysicalString::setBentSemitones (float semitones) noexcept
@@ -365,6 +391,7 @@ float PhysicalString::pullIncident() noexcept
         const double amplitudeNow = static_cast<double> (pluckDepthMetres) * decay;
         const double shift = std::min (0.0145, tensionBeta * amplitudeNow * amplitudeNow);
         tensionRatio = 1.0 / (1.0 + shift);
+        tensionShiftCents = static_cast<float> (1200.0 * std::log2 (1.0 + shift));
     }
 
     const double targetDelay = (baseTotalDelay * tensionRatio)
@@ -389,6 +416,11 @@ float PhysicalString::pullIncident() noexcept
         dispersionState[i] = f - dispersionCoeff * y;
         f = y;
     }
+
+    // The stopped end of the string is loaded by the neck; this reflection is
+    // applied once per lap by the loop itself, so each partial sees the neck's
+    // admittance at its own frequency.
+    f = neckPort.reflect (f, waveImpedance);
 
     incidentOut = f;
     return f;

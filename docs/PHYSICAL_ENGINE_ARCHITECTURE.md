@@ -31,6 +31,7 @@ junction, and every voice receives the response.
 | `src/dsp/GuitarSpec.h` | Central parameter registry. String geometry, mass, E, B derivation, tension, Z₀. Every constant has a provenance comment. |
 | `src/dsp/PhysicalString.h/.cpp` | Stiff-string waveguide, pick/string collision, gesture damping, aperture sensing. |
 | `src/dsp/BodyNeckModel.h/.cpp` | 9-mode structural admittance and the junction solver. |
+| `src/dsp/NeckPort.h/.cpp` | Per-string neck termination: the stopped end's mobility, weighted by the neck's mode shapes at the fret. |
 | `src/dsp/MagneticPickupModel.h/.cpp` | Flux linkage law and the passive humbucker's electrical network. |
 | `src/dsp/PhysicalEngine.h/.cpp` | Voice pool, string assignment, articulation, coupled render loop. |
 | `src/dsp/SevenAudioEngine.*` | Façade: dispatches to `PhysicalEngine`, or to the preserved 1.x engine when `useLegacyEngine` is set. |
@@ -51,6 +52,15 @@ Loop: `delay(P) → one-pole loss → one-pole HF loss → 4 × all-pass dispers
   B by 1/L² automatically.
 - **Loss**: one filter pass per round trip, so the T60 gain is referred to the
   fundamental (`g = 10^(−3/(T60·f₀))`), not to the sample rate.
+- **Fret-dependent neck termination**: the stopped end is loaded by a three-mode
+  neck admittance whose weights are the clamped-free mode shapes at the stopping
+  point, `phi_m = sin((m+1/2) pi x/L)` with `x/L = 2^(-fret/12)`. The nut is the free
+  end (maximum mobility) and the body joint is stiff, so a note loses more energy to
+  the neck when it is open and less as it is fretted higher. Applied inside the loop,
+  so the loss is partial-selective rather than broadband.
+- **Fretting and harmonic contact**: `T60` is divided by `1 + 0.01 x fret` for fret
+  contact loss, and multiplied by 0.62 for a touched harmonic where the fingertip damps
+  the node.
 - **Tension modulation**: a displaced string is longer, so its tension and pitch rise.
   The loop delay is scaled by `1/(1 + beta A^2)` with `beta = pi^2 E A_core/(8 L^2 T)`
   and `A` the physical pluck depth scaled by the decay of the sensed envelope, clamped

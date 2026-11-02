@@ -1,7 +1,7 @@
 # Progress — Physical Engine Rehaul
 
 **Last successful build:** Release x64, 2026-11-02.
-**Test status at last run:** 111 engine checks, 30 physics checks, **0 failures**.
+**Test status at last run:** 111 engine checks, 35 physics checks, **0 failures**.
 **Last known good commit:** the commit that adds `src/dsp/PhysicalEngine.*`
 (this session).
 
@@ -56,9 +56,8 @@ cents. Clamped at 25 cents for stability.
 
 | Item | State | Detail |
 |---|---|---|
-| Position-dependent mobility | approximation | All strings drive one structural point. |
-| Humbucker two-point antiphase sensing | not implemented | The measured 3–4 kHz low-string notch is absent. |
-| Natural harmonic node damping | partial | Modal excitation on the open string; the touching finger's extra damping is not modelled. |
+| Multi-pickup support | planned | One humbucker voicing; the sensing model already takes position and aperture as parameters. |
+| Humbucker notch validation | not measured | The two-coil comb is implemented; its absolute notch frequency is not confirmed against a reference pickup. |
 | Measured T60 tables | not obtained | Paté et al. paywalled; internal-loss T60 curve is estimated. |
 | Body damping ratios / pickup Q / coupling strengths | estimated | Centralised and labelled; replace when measured data is available. |
 
@@ -76,14 +75,26 @@ cents. Clamped at 25 cents for stability.
 - CPU: 2.3 % of one core for 7 voices at 48 kHz.
 - Renders: `build/artifacts/10_physical_standard_b_chord.wav`,
   `11_physical_palm_mute.wav`, `12_physical_drop_f.wav`.
-## Exact next task
-Give each string its own structural port. Today every voice drives one effective point
-on the structure, so dead spots depend on pitch but not on fret position. Add a
-position-dependent mobility: a second port for the neck termination and a per-string
-coupling vector, then verify that a note whose partial lands on the 430 Hz neck mode
-decays measurably faster when fretted near an antinode (Fleischer's dead-spot
-criterion).
+### Position-dependent coupling, two-coil sensing, fret and harmonic damping
 
-Files: `src/dsp/BodyNeckModel.h/.cpp` (second port, coupling vector),
-`src/dsp/PhysicalEngine.cpp` (per-voice port assignment), `tests/PhysicsTests.cpp`
-(dead-spot check).
+Added after the first pass:
+
+- `NeckPort` — a three-mode neck admittance per string, weighted by the clamped-free
+  mode shapes at the stopping point. Open notes lose 15 % per lap at 430 Hz, the same
+  string fretted at 12 loses 7.9 %: the dead-spot mechanism, with identical Z0 so the
+  comparison is clean.
+- Humbucker sensing is now two apertures 19 mm apart, which produces the measured
+  notch where the coil spacing is an odd multiple of a half wavelength.
+- Fret contact loss (`T60 / (1 + 0.01 x fret)`) and touched-node damping for harmonics
+  (`T60 x 0.62`).
+
+## Exact next task
+Validate the model against a real instrument. Every number in
+`PHYSICAL_MODEL_VALIDATION.md` is reproducible but internal: nothing has been compared
+with a recorded DI. Add a comparison harness that reads a 24-bit mono WAV, measures
+partial decay and the pickup-position comb for the same note, and reports the difference
+against the model. Needs either a supplied DI recording or a documented measurement
+procedure (fixed pluck position and force, bridge and neck pickup, 25.5 in scale).
+
+Files: new `tests/DiComparison.cpp`, `tests/CMakeLists`-equivalent entry in
+`CMakeLists.txt`, `docs/PHYSICAL_MODEL_VALIDATION.md`.

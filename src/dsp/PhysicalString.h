@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "dsp/GuitarSpec.h"
+#include "dsp/NeckPort.h"
 #include "params/Parameters.h"
 
 namespace ps
@@ -41,6 +42,8 @@ public:
         int harmonicNumber = 0;       // 0 = fundamental excitation
         bool pinch = false;
         float pickThicknessMm = 0.9f;
+        float fretRatio = 1.0f;   // 2^(-fret/12)
+        float fretNumber = 0.0f;
         double apertureWidthMetres = 0.0635; // humbucker pole footprint (measured, 2.5 in)
         uint32_t seed = 1u;
     };
@@ -64,6 +67,12 @@ public:
     bool isActive() const noexcept { return active; }
     bool isDying() const noexcept { return dying; }
     float getAmplitude() const noexcept { return lastAmplitude; }
+    double getNeckCoupling() const noexcept { return neckPort.couplingWeight(); }
+    float getTensionShiftCents() const noexcept { return tensionShiftCents; }
+    double getNeckAbsorptionAt (double frequency) const
+    {
+        return neckPort.absorptionAt (frequency, waveImpedance);
+    }
 
     void setBentSemitones (float semitones) noexcept;
     void setPalmMuteTarget (float amount) noexcept;
@@ -90,6 +99,7 @@ private:
     uint32_t rng = 1u;
 
     double waveImpedance = 0.4;   // Z0 = sqrt(T mu)
+    NeckPort neckPort;
     double baseTotalDelay = 585.0;
     double filterPhaseDelay = 0.0;
     double smoothDelay = 585.0;
@@ -118,7 +128,7 @@ private:
     float dispersionCoeff = 0.0f;
     float dispersionState[kDispersionSections] {};
 
-    float apertureFractions[5] {};
+    float apertureFractions[6] {};
     int apertureTaps = 5;
 
     float fadeGain = 1.0f;
@@ -135,5 +145,6 @@ private:
     float senseEnvelope = 0.0f;      // smoothed |sensed displacement|, model units
     float senseReference = 0.0f;     // its peak, used to track the decay
     float tensionSmoothCoeff = 0.002f;
+    float tensionShiftCents = 0.0f;
 };
 } // namespace ps

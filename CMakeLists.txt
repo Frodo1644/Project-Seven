@@ -48,6 +48,7 @@ add_library(projectseven_core STATIC
     src/dsp/StringModel.cpp
     src/dsp/PickupModel.cpp
     src/dsp/BodyNeckModel.cpp
+    src/dsp/NeckPort.cpp
     src/dsp/PhysicalString.cpp
     src/dsp/MagneticPickupModel.cpp
     src/dsp/PhysicalEngine.cpp

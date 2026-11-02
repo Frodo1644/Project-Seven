@@ -53,6 +53,9 @@ public:
     double getStructureVelocity() const noexcept { return junction.velocity; }
     double getStringImpedance (int voiceSlot) const noexcept;
     float getVoiceIncident (int voiceSlot) const noexcept;
+    double getVoiceNeckCoupling (int voiceSlot) const noexcept;
+    double getVoiceNeckAbsorptionAt (int voiceSlot, double frequency) const noexcept;
+    double getVoiceTensionCents (int voiceSlot) const noexcept;
 
 private:
     struct Voice

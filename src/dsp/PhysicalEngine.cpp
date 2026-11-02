@@ -229,6 +229,8 @@ void PhysicalEngine::startVoice (Voice& voice,
     setup.bentSemitones = bendNormalized * static_cast<float> (parameters.bendRange);
     setup.harmonicNumber = assignment.harmonic ? assignment.harmonicNumber : 0;
     setup.pinch = articulation == Articulation::pinchHarmonic;
+    setup.fretRatio = static_cast<float> (std::pow (2.0, -static_cast<double> (assignment.fret) / 12.0));
+    setup.fretNumber = static_cast<float> (assignment.fret);
 
     ++noteCounter;
     setup.seed = static_cast<uint32_t> (noteCounter * 2654435761ull)
@@ -412,6 +414,27 @@ int PhysicalEngine::getActiveVoiceCount() const noexcept
         if (voice.active && ! voice.dying)
             ++count;
     return count;
+}
+
+double PhysicalEngine::getVoiceNeckCoupling (int voiceSlot) const noexcept
+{
+    if (voiceSlot < 0 || voiceSlot >= static_cast<int> (voices.size()))
+        return 0.0;
+    return voices[static_cast<size_t> (voiceSlot)].string.getNeckCoupling();
+}
+
+double PhysicalEngine::getVoiceNeckAbsorptionAt (int voiceSlot, double frequency) const noexcept
+{
+    if (voiceSlot < 0 || voiceSlot >= static_cast<int> (voices.size()))
+        return 1.0;
+    return voices[static_cast<size_t> (voiceSlot)].string.getNeckAbsorptionAt (frequency);
+}
+
+double PhysicalEngine::getVoiceTensionCents (int voiceSlot) const noexcept
+{
+    if (voiceSlot < 0 || voiceSlot >= static_cast<int> (voices.size()))
+        return 0.0;
+    return static_cast<double> (voices[static_cast<size_t> (voiceSlot)].string.getTensionShiftCents());
 }
 
 double PhysicalEngine::getStringImpedance (int voiceSlot) const noexcept

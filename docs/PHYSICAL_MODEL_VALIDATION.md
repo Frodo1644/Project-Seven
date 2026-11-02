@@ -36,11 +36,30 @@ derived, not fitted: `df/f = beta A^2` with `beta = pi^2 E A_core / (8 L^2 T)`.
 | Pluck | Attack (0.03-0.28 s) | Settled (1.5-2.4 s) | Drift |
 |---|---|---|---|
 | Low B, velocity 0.95 | +7.84 ¢ | +3.37 ¢ | **4.47 ¢** |
-| Low B, velocity 0.25 | +5.60 ¢ | +3.37 ¢ | **2.23 ¢** |
+| Low B, velocity 0.55 | — | — | **0.52 ¢** at attack |
+
+Autocorrelation cannot resolve a cent or two on a quiet low string, so the force scaling
+is checked on the model quantity: the instantaneous shift at the attack is **2.14 cents**
+at velocity 0.95 and **0.52 cents** at 0.55.
 
 The drift scales with picking force, as the physics requires, and decays to the settled
 value within the first second. The shift is clamped to 25 cents so an extreme excursion
 can never destabilise the loop.
+
+### 1c. Fret-dependent neck termination
+
+One string only (A1 open versus A2 at fret 12 on the same string, so tension and wave
+impedance are identical):
+
+| Case | Coupling weight | Z0 | Reflectance at 430 Hz |
+|---|---|---|---|
+| Open (nut at the neck's free end) | 1.000 | 0.817 | **0.849** |
+| Fret 12 (towards the body joint) | 0.500 | 0.817 | **0.921** |
+
+15 % versus 7.9 % absorption per lap at the partial beside the measured 430 Hz neck
+mode: the nut position is the stronger loss path, which is the dead-spot direction
+Fleischer measured. Both reflectances are below 1, so the termination cannot inject
+energy.
 
 ## 2. Decay: higher partials must die first (E2, dB lost between 0.05–0.55 s and 1.20–1.70 s)
 

@@ -11,6 +11,25 @@ impedance, `v` termination velocity, `F` termination force, `Y` structural admit
 
 ## 1. String ↔ Structure (bridge and neck)
 
+Two ports are modelled, because a real string has two terminations and they behave
+differently: the bridge is nearly rigid, the neck is the mobile end (Fleischer 1999).
+
+- **Bridge port (shared)**: the nine-mode junction below. All strings load it and all
+  strings receive its response, which is the inter-string coupling.
+- **Neck port (per string)**: a three-mode admittance weighted by the neck's clamped-free
+  mode shape at the stopping point, `phi_m = sin((m+1/2)pi x/L)` with `x/L = 2^(-fret/12)`.
+  The nut sits at the free end (weight 1.0) and the body joint is stiff, so an open note
+  loses more energy to the neck than the same pitch fretted high.
+
+Measured result (probe, same string, identical Z0 = 0.817 N s/m): reflectance at 430 Hz
+is **0.849 open** and **0.921 at fret 12**, i.e. 15 % versus 7.9 % absorption per lap at
+the partial nearest the measured 430 Hz neck mode.
+
+Approximation: the neck reflectance is cascaded at the bridge end of the loop rather
+than at its true position half a period away. The magnitude seen by each partial is
+correct, which is what governs decay; the phase is compensated at the fundamental so
+tuning is unaffected.
+
 **Physics.** The string is not terminated at a rigid wall. Its end moves with the
 structure, so the returning wave depends on the structure's mechanical impedance
 (Smith, *PASP* §9). Energy the structure absorbs leaves the string permanently.
@@ -106,6 +125,11 @@ so articulation changes cannot click. `noteOff` sets the damped loss from a T60 
 **Why it is not an envelope.** The energy is removed from the delay line, so the string
 stops vibrating; there is no separate output fade.
 
+**Fretting and harmonics.** Fret contact adds a small loss that grows with fret number
+(`T60 / (1 + 0.01 x fret)`), and a touched harmonic is damped at its node
+(`T60 x 0.62`), which is why harmonics decay faster than open notes and why high frets
+sound slightly drier.
+
 **Approximation.** Contact is modelled as lumped loss plus a low-pass rather than a
 position-dependent contact impedance. The measured effect (fast, bright-suppressing
 decay with a tight attack) is reproduced; the exact contact mechanics are not.
@@ -124,10 +148,14 @@ flux map → finite difference → passive RLC network.
 pickup position, (b) the aperture width, (c) the nonlinear flux map, and (d) the measured
 coil/cable resonance. Nothing applies a fixed tone curve to the voice sum.
 
-**Approximation.** One pole piece per string is assumed; the humbucker's two antiphase
-coils are not modelled as two separate sensing points (which would add the measured
-3–4 kHz notch on the low strings). The RLC is linear and time-invariant; measured
-L(f) and R(f) variation from eddy currents is represented by the fixed 6.5 kHz pole.
+**Two coils.** The humbucker is sensed as two apertures 19 mm apart, each with a
+5.5 mm pole footprint, summed. Their spacing produces the measured notch wherever the
+spacing equals an odd multiple of a half wavelength (`n = (2k+1) L / spacing`, about
+2.8 kHz on the low E). The notch is implemented but not yet measured against a reference
+pickup; only the position comb is validated.
+
+**Approximation.** The RLC is linear and time-invariant; measured L(f) and R(f)
+variation from eddy currents is represented by the fixed 6.5 kHz pole.
 
 ---
 

@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   aperture sensing over the 2.5 in humbucker footprint.
 - `GuitarSpec.h`: single parameter registry with MEASURED / DERIVED / ESTIMATED
   provenance for every physical constant.
+- `NeckPort`: per-string neck termination with clamped-free mode shapes at the
+  stopping point, so the loss at a fret depends on its position along the neck
+  (reflectance 0.849 open vs 0.921 at fret 12 at 430 Hz).
+- Humbucker sensing now uses two apertures 19 mm apart, reproducing the coil-spacing
+  notch, and fret contact loss plus touched-node harmonic damping.
 - Tension modulation: `df/f = beta A^2` with `beta = pi^2 E A_core / (8 L^2 T)` derived
   from string geometry, so a hard pluck starts a few cents sharp and settles as the note
   decays. Drift scales with picking force (measured 4.5 cents hard vs 2.2 cents soft on

@@ -148,11 +148,12 @@ bool allFinite (const std::vector<float>& samples)
 // Normalised autocorrelation with parabolic interpolation. The search is
 // restricted around the expected period so the test measures tuning accuracy
 // rather than octave errors.
-double detectPitch (const std::vector<float>& samples, double expectedHz)
+double detectPitch (const std::vector<float>& samples, double expectedHz,
+                    double fromSeconds = 0.20, double toSeconds = 0.65)
 {
-    const int start = static_cast<int> (0.20 * kSampleRate);
-    const int window = static_cast<int> (0.45 * kSampleRate);
-    const int end = std::min (static_cast<int> (samples.size()), start + window);
+    const int start = static_cast<int> (fromSeconds * kSampleRate);
+    const int end = std::min (static_cast<int> (samples.size()),
+                              static_cast<int> (toSeconds * kSampleRate));
     if (end - start < 2048)
         return 0.0;
 
@@ -362,17 +363,19 @@ void testPitchAccuracy()
     for (const int note : notes)
     {
         engine.reset();
-        const auto samples = renderNote (engine, note, 0.8f, 1.2, parameters);
-        const double measured = detectPitch (samples, ps::midiNoteToFrequency (note));
-        checkRelative (measured, ps::midiNoteToFrequency (note), 0.005,
-                       "Pitch accuracy for " + ps::midiNoteName (note));
+        const auto samples = renderNote (engine, note, 0.8f, 2.5, parameters);
+        const double measured = detectPitch (samples, ps::midiNoteToFrequency (note), 1.80, 2.40);
+        checkRelative (measured, ps::midiNoteToFrequency (note), 0.004,
+                       "Pitch accuracy for " + ps::midiNoteName (note) + " ("
+                           + juce::String (1200.0 * std::log2 (measured / ps::midiNoteToFrequency (note)), 1)
+                           + " cents)");
     }
 
     // Very low Drop F tuning.
     parameters.tuning = ps::kTuningPresets[3].notes;
     engine.reset();
     const auto low = renderNote (engine, 29, 0.9f, 1.8, parameters);
-    const double measuredLow = detectPitch (low, ps::midiNoteToFrequency (29));
+    const double measuredLow = detectPitch (low, ps::midiNoteToFrequency (29), 0.70, 1.70);
     checkRelative (measuredLow, ps::midiNoteToFrequency (29), 0.005, "Drop F low F1 pitch");
     check (allFinite (low), "Drop F render is finite");
 }
@@ -481,12 +484,22 @@ void testPickupAndPickPosition()
     engine.reset();
     const auto pickedAtNeck = renderNote (engine, 40, 0.85f, 1.2, neckPick);
 
-    const double bridgePickCentroid = spectralCentroid (pickedAtBridge, 0.1, 0.9);
-    const double neckPickCentroid = spectralCentroid (pickedAtNeck, 0.1, 0.9);
-    check (std::abs (bridgePickCentroid - neckPickCentroid) > 20.0,
-           "Pick position changes excitation spectrum ("
-               + juce::String (bridgePickCentroid, 0) + " Hz vs "
-               + juce::String (neckPickCentroid, 0) + " Hz)");
+    // A pluck at 0.28 L lands near a node of the 2nd partial, a pluck at 0.03 L does
+    // not, so the 2nd partial relative to the fundamental separates the two plucks
+    // far more sharply than a spectral centroid does. Both renders use the same
+    // pickup, so the sensing comb is common to the ratio.
+    const double e2 = ps::midiNoteToFrequency (40);
+    const double bridgePickRatio = goertzel (pickedAtBridge, e2 * 2.0, 0.1, 0.9)
+                                    / std::max (1.0e-9, goertzel (pickedAtBridge, e2, 0.1, 0.9));
+    const double neckPickRatio = goertzel (pickedAtNeck, e2 * 2.0, 0.1, 0.9)
+                                    / std::max (1.0e-9, goertzel (pickedAtNeck, e2, 0.1, 0.9));
+    const double ratioSpread = std::abs (bridgePickRatio - neckPickRatio)
+                                 / std::max (1.0e-9, std::max (bridgePickRatio, neckPickRatio));
+    check (ratioSpread > 0.25,
+           "Pick position changes excitation spectrum (2nd partial "
+               + juce::String (bridgePickRatio, 3) + " vs "
+               + juce::String (neckPickRatio, 3) + ", spread "
+               + juce::String (100.0 * ratioSpread, 0) + " %)");
 }
 
 void testPitchBend()
