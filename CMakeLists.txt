@@ -42,18 +42,18 @@ option(PROJECT_SEVEN_BUILD_EDITOR_SNAPSHOT "Build the offline editor screenshot 
 # test executable can drive the exact same code headlessly.
 # ---------------------------------------------------------------------------
 add_library(projectseven_core STATIC
-    Source/params/Parameters.cpp
-    Source/params/TuningManager.cpp
-    Source/params/PresetManager.cpp
-    Source/dsp/StringModel.cpp
-    Source/dsp/PickupModel.cpp
-    Source/dsp/SevenAudioEngine.cpp
-    Source/PluginProcessor.cpp
-    Source/PluginEditor.cpp
+    src/params/Parameters.cpp
+    src/params/TuningManager.cpp
+    src/params/PresetManager.cpp
+    src/dsp/StringModel.cpp
+    src/dsp/PickupModel.cpp
+    src/dsp/SevenAudioEngine.cpp
+    src/core/PluginProcessor.cpp
+    src/core/PluginEditor.cpp
     ${PROJECT_SEVEN_PLUTOVG_SOURCE}
 )
 
-target_include_directories(projectseven_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Source")
+target_include_directories(projectseven_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 target_link_libraries(projectseven_core PUBLIC
     juce::juce_audio_basics
@@ -90,7 +90,7 @@ juce_add_plugin(ProjectSeven
 )
 
 target_sources(ProjectSeven PRIVATE
-    Source/PluginEntry.cpp
+    src/core/PluginEntry.cpp
 )
 
 target_link_libraries(ProjectSeven PRIVATE
@@ -110,7 +110,7 @@ if(PROJECT_SEVEN_BUILD_TESTS)
     juce_add_console_app(ProjectSevenTests PRODUCT_NAME "ProjectSevenTests")
 
     target_sources(ProjectSevenTests PRIVATE
-        Tests/TestMain.cpp
+        tests/TestMain.cpp
     )
 
     target_link_libraries(ProjectSevenTests PRIVATE
@@ -136,7 +136,7 @@ if(PROJECT_SEVEN_BUILD_VST3_SMOKE)
     juce_add_console_app(ProjectSevenVst3Smoke PRODUCT_NAME "ProjectSevenVst3Smoke")
 
     target_sources(ProjectSevenVst3Smoke PRIVATE
-        Tests/Vst3Smoke.cpp
+        tests/Vst3Smoke.cpp
     )
 
     target_link_libraries(ProjectSevenVst3Smoke PRIVATE
@@ -161,7 +161,7 @@ if(PROJECT_SEVEN_BUILD_EDITOR_SNAPSHOT)
     juce_add_console_app(ProjectSevenEditorSnapshot PRODUCT_NAME "ProjectSevenEditorSnapshot")
 
     target_sources(ProjectSevenEditorSnapshot PRIVATE
-        Tests/EditorSnapshot.cpp
+        tests/EditorSnapshot.cpp
     )
 
     target_link_libraries(ProjectSevenEditorSnapshot PRIVATE

@@ -1,0 +1,58 @@
+# Build directories
+build/
+Builds/
+
+# Compiled binaries
+*.exe
+*.dll
+*.lib
+*.obj
+*.pdb
+*.exp
+*.ilk
+
+# VST3 bundle (generated)
+*.vst3/
+
+# Temporary files
+*.tmp
+*.log
+*.tlog
+*.rule
+*.recipe
+
+# IDE files
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.user
+*.suo
+*.opendb
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts in root
+*.wav
+CheckVst3.*
+ListExports.*
+Vst3Scanner.*
+Vst3ScanTest.*
+check_exports.ps1
+check_projectseven.bat
+TestVST3inCubase.ps1
+TroubleshootingSteps.txt
+quick_check.py
+
+# Editor snapshots (generated)
+editor_preview.png
+editor_small.png
+
+# ZIP distributions (generated)
+ProjectSeven-*-win64.zip
