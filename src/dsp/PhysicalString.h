@@ -125,5 +125,15 @@ private:
     float fadeCoeff = 1.0f;
     float lastAmplitude = 0.0f;
     float incidentOut = 0.0f;
+
+    // Tension modulation. Stretching a string raises its tension, so the pitch
+    // starts sharp after a hard pluck and settles as the note decays.
+    //   strain = A^2 pi^2 / (4 L^2),  dT = E A_core strain,  df/f = dT / (2T)
+    //   =>  df/f = beta A^2,   beta = pi^2 E A_core / (8 L^2 T)
+    double tensionBeta = 0.0;        // 1/m^2
+    float pluckDepthMetres = 0.0f;   // physical peak displacement at note start
+    float senseEnvelope = 0.0f;      // smoothed |sensed displacement|, model units
+    float senseReference = 0.0f;     // its peak, used to track the decay
+    float tensionSmoothCoeff = 0.002f;
 };
 } // namespace ps

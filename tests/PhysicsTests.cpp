@@ -241,10 +241,13 @@ int main()
         const int notes[] = { 35, 40, 45, 50, 55, 59, 64 };
         for (int note : notes)
         {
+            // Measured in the settled window: a hard pluck is physically sharp
+            // for the first few hundred milliseconds (tension modulation), and
+            // tuning is the pitch the string settles at.
             engine.reset();
-            const auto out = render (engine, p, note, 0.8f, 1.4);
+            const auto out = render (engine, p, note, 0.8f, 2.2);
             const double expected = ps::midiNoteToFrequency (note);
-            const double measured = detectPitch (out, expected);
+            const double measured = detectPitch (out, expected, 1.10, 1.90);
             const double cents = 1200.0 * std::log2 (measured / expected);
             std::printf ("  note %-3d expected %8.2f Hz  measured %8.2f Hz  (%+5.1f cents)\n",
                          note, expected, measured, cents);
@@ -254,8 +257,8 @@ int main()
         engine.reset();
         auto dropF = p;
         dropF.tuning = ps::kTuningPresets[3].notes;
-        const auto low = render (engine, dropF, 29, 0.9f, 2.0);
-        const double cents = 1200.0 * std::log2 (detectPitch (low, ps::midiNoteToFrequency (29))
+        const auto low = render (engine, dropF, 29, 0.9f, 2.6);
+        const double cents = 1200.0 * std::log2 (detectPitch (low, ps::midiNoteToFrequency (29), 1.20, 2.10)
                                                   / ps::midiNoteToFrequency (29));
         std::printf ("  Drop F F1 (%6.2f Hz) error %+.1f cents\n", ps::midiNoteToFrequency (29), cents);
         check (std::abs (cents) < 10.0, "Drop F low F1 stays in tune");
@@ -403,7 +406,37 @@ int main()
         check (elapsed < 3.0, "Coupled engine renders faster than real time");
     }
 
-    // ---- 9. Renders for listening ----
+    // ---- 9. Tension modulation (pitch starts sharp, then settles) ----
+    {
+        ps::PhysicalEngine engine;
+        engine.prepare (kFs, 512);
+        auto p = baseParameters();
+        const auto out = render (engine, p, 35, 0.95f, 3.0); // hard low B
+
+        const double nominal = ps::midiNoteToFrequency (35);
+        const double earlyCents = 1200.0 * std::log2 (detectPitch (out, nominal, 0.03, 0.28) / nominal);
+        const double lateCents = 1200.0 * std::log2 (detectPitch (out, nominal, 1.50, 2.40) / nominal);
+
+        std::printf ("tension modulation: attack %+.2f cents, settled %+.2f cents, drift %.2f cents\n",
+                     earlyCents, lateCents, earlyCents - lateCents);
+
+        check (earlyCents - lateCents > 1.0,
+               "Hard attack starts sharp (string stretches, tension rises)");
+        check (std::abs (lateCents) < 8.0, "Settled pitch returns to tune");
+
+        // A soft note displaces the string far less, so the drift must be smaller.
+        ps::PhysicalEngine soft;
+        soft.prepare (kFs, 512);
+        const auto softOut = render (soft, p, 35, 0.25f, 3.0);
+        const double softEarly = 1200.0 * std::log2 (detectPitch (softOut, nominal, 0.03, 0.28) / nominal);
+        const double softLate = 1200.0 * std::log2 (detectPitch (softOut, nominal, 1.50, 2.40) / nominal);
+        std::printf ("soft attack:        %+.2f cents, settled %+.2f cents, drift %.2f cents\n",
+                     softEarly, softLate, softEarly - softLate);
+        check ((earlyCents - lateCents) > (softEarly - softLate),
+               "Drift scales with picking force");
+    }
+
+    // ---- 10. Renders for listening ----
     {
         auto dir = juce::File::getCurrentWorkingDirectory().getChildFile ("artifacts");
         dir.createDirectory();

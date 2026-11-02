@@ -72,6 +72,13 @@ void PhysicalString::start (const Setup& setup,
     vibratingLength = std::max (0.05, state.vibratingLength);
     waveImpedance = std::max (1.0e-4, state.impedance);
 
+    // Tension modulation coefficient, derived (not fitted) from the string's
+    // own geometry: beta = pi^2 E A_core / (8 L^2 T).
+    const double piValue = 0.5 * kTwoPi;
+    const double coreArea = 0.25 * piValue * design.coreDiameter * design.coreDiameter;
+    tensionBeta = (piValue * piValue) * design.youngsModulus * coreArea
+                / (8.0 * vibratingLength * vibratingLength * std::max (1.0, state.tension));
+
     double targetFrequency = std::max (10.0, state.frequency);
     targetFrequency = std::min (targetFrequency, std::min (4000.0, fs * 0.45));
 
@@ -88,6 +95,7 @@ void PhysicalString::start (const Setup& setup,
     bendSmoothCoeff = static_cast<float> (1.0 - std::exp (-1.0 / (0.012 * fs)));
     delaySmoothCoeff = static_cast<double> (1.0 - std::exp (-1.0 / (0.010 * fs)));
     dampSmoothCoeff = static_cast<float> (1.0 - std::exp (-1.0 / (0.030 * fs)));
+    tensionSmoothCoeff = static_cast<float> (1.0 - std::exp (-1.0 / (0.008 * fs)));
 
     // --- Loop loss: string internal damping only --------------------------
     //
@@ -261,6 +269,7 @@ void PhysicalString::start (const Setup& setup,
     // Pluck depth in millimetres.  ESTIMATED: a firm pick on a low string
     // displaces it roughly 1-2 mm; the model's pickup gap is 2 mm.
     float amplitude = 1.35f * std::pow (velocity, 1.30f) * (0.55f + 0.45f * intensity);
+    pluckDepthMetres = amplitude * 1.0e-3f;
     if (harmonic)
         amplitude *= 0.85f;
 
@@ -289,6 +298,8 @@ void PhysicalString::start (const Setup& setup,
 
     lastAmplitude = 0.0f;
     incidentOut = 0.0f;
+    senseEnvelope = 0.0f;
+    senseReference = 0.0f;
 }
 
 void PhysicalString::setBentSemitones (float semitones) noexcept
@@ -342,7 +353,22 @@ float PhysicalString::pullIncident() noexcept
     dampCurrent += (dampTarget - dampCurrent) * dampSmoothCoeff;
     bendRatioCurrent += (bendRatio - bendRatioCurrent) * bendSmoothCoeff;
 
-    const double targetDelay = baseTotalDelay / static_cast<double> (bendRatioCurrent) - filterPhaseDelay;
+    // Tension modulation: frequency rises by (1 + beta A^2), so the loop delay
+    // scales by the inverse. A is the physical peak displacement, obtained from
+    // the pluck depth scaled by the decay of the sensed envelope. Clamped to
+    // 25 cents so an extreme excursion can never destabilise the loop.
+    double tensionRatio = 1.0;
+    if (tensionBeta > 0.0 && pluckDepthMetres > 0.0f && senseReference > 1.0e-9f)
+    {
+        const double decay = std::min (1.0, static_cast<double> (senseEnvelope)
+                                            / static_cast<double> (senseReference));
+        const double amplitudeNow = static_cast<double> (pluckDepthMetres) * decay;
+        const double shift = std::min (0.0145, tensionBeta * amplitudeNow * amplitudeNow);
+        tensionRatio = 1.0 / (1.0 + shift);
+    }
+
+    const double targetDelay = (baseTotalDelay * tensionRatio)
+                             / static_cast<double> (bendRatioCurrent) - filterPhaseDelay;
     smoothDelay += (targetDelay - smoothDelay) * delaySmoothCoeff;
     smoothDelay = clampd (smoothDelay, 2.0, static_cast<double> (maxLoop - 6));
 
@@ -400,6 +426,12 @@ float PhysicalString::senseAperture() noexcept
 
     const float displacement = static_cast<float> (sum / static_cast<double> (apertureTaps));
     lastAmplitude = std::abs (displacement);
+
+    const float magnitude = std::abs (displacement);
+    senseEnvelope += (magnitude - senseEnvelope) * tensionSmoothCoeff;
+    if (senseEnvelope > senseReference)
+        senseReference = senseEnvelope;
+
     return displacement;
 }
 
