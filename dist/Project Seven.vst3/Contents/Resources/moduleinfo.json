@@ -1,0 +1,48 @@
+{
+  "Name": "Project Seven",
+  "Version": "1.0.0",
+  "Factory Info": {
+    "Vendor": "Project Seven Audio",
+    "URL": "",
+    "E-Mail": "",
+    "Flags": {
+      "Unicode": true,
+      "Classes Discardable": false,
+      "Component Non Discardable": false,
+    },
+  },
+  "Classes": [
+    {
+      "CID": "ABCDEF019182FAEB506A736E50733776",
+      "Category": "Audio Module Class",
+      "Name": "Project Seven",
+      "Vendor": "Project Seven Audio",
+      "Version": "1.0.0",
+      "SDKVersion": "VST 3.8.0",
+      "Sub Categories": [
+        "Instrument",
+        "Synth",
+      ],
+      "Class Flags": 2,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+    {
+      "CID": "ABCDEF011234ABCD506A736E50733776",
+      "Category": "Component Controller Class",
+      "Name": "Project Seven",
+      "Vendor": "Project Seven Audio",
+      "Version": "1.0.0",
+      "SDKVersion": "VST 3.8.0",
+      "Sub Categories": [
+        "Instrument",
+        "Synth",
+      ],
+      "Class Flags": 2,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+  ],
+}
