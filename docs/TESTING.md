@@ -6,7 +6,7 @@ Project Seven has comprehensive automated tests covering audio engine behaviour,
 
 ## Engine Tests
 
-The engine test suite runs 111 checks with 0 failures at 48 kHz. A further 35 checks
+The engine test suite runs 111 checks with 0 failures at 48 kHz. A further 42 checks
 verify the physical model directly (`ProjectSevenPhysicsTests`).
 
 ### Physics probe (`ProjectSevenPhysicsTests`)
@@ -23,6 +23,7 @@ verify the physical model directly (`ProjectSevenPhysicsTests`).
 - tension modulation: attack drift, settled pitch and the force-scaling law;
 - neck termination: coupling weight, reflectance and passivity versus fret;
 - pickup position comb and two-coil aperture;
+- output level: per-string peaks, single-note level and chord headroom;
 - CPU for 7 voices over 10 s;
 - WAV renders written to the working directory's `artifacts/` folder.
 

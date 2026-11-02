@@ -813,7 +813,7 @@ void testStabilityAndArtifacts()
         std::vector<float> output (static_cast<size_t> (6.0 * kSampleRate), 0.0f);
         engine.render (output.data(), static_cast<int> (output.size()));
         check (allFinite (output), "Seven-string chord render is finite");
-        check (peak (output) < 1.5, "Seven-string chord does not clip the model");
+        check (peak (output) < 0.95, "Seven-string chord does not clip the model");
         writeWav (artifacts.getChildFile ("01_standard_b_chord.wav"), output);
     }
 

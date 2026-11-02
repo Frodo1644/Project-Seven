@@ -1,7 +1,7 @@
 # Progress — Physical Engine Rehaul
 
 **Last successful build:** Release x64, 2026-11-02.
-**Test status at last run:** 111 engine checks, 35 physics checks, **0 failures**.
+**Test status at last run:** 111 engine checks, 42 physics checks, **0 failures**.
 **Last known good commit:** the commit that adds `src/dsp/PhysicalEngine.*`
 (this session).
 
@@ -87,6 +87,14 @@ Added after the first pass:
   notch where the coil spacing is an odd multiple of a half wavelength.
 - Fret contact loss (`T60 / (1 + 0.01 x fret)`) and touched-node damping for harmonics
   (`T60 x 0.62`).
+
+### Output level
+
+The instrument arrived 20 dB down: Faraday output scales with string velocity, so the
+strings sat 12 dB apart, the master trim targeted -16 dBFS and Output Level defaulted to
+-6 dB. Fixed with a derived per-string trim, a recalibrated master trim and a 0 dB
+Output Level default. Singles now peak at -14.9 dBFS and a seven-string chord at
+-3.1 dBFS, both asserted in the suites.
 
 ## Exact next task
 Validate the model against a real instrument. Every number in

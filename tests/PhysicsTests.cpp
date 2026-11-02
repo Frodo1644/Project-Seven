@@ -372,6 +372,21 @@ int main()
         const auto chord = render (engine, p, 29, 0.95f, 2.0);
         std::printf ("Drop F single note peak %.4f\n", peakOf (chord));
 
+        // Per-string single-note level: the EMF scales with string velocity, so the
+        // strings do not peak equally.  This is the calibration data for the level.
+        for (const int note : { 35, 40, 45, 50, 55, 59, 64 })
+        {
+            ps::PhysicalEngine one;
+            one.prepare (kFs, 512);
+            auto sp = baseParameters();
+            const auto s = render (one, sp, note, 0.8f, 2.0);
+            std::printf ("single note %s peak %.4f  rms %.4f\n",
+                         ps::midiNoteName (note).toRawUTF8(), peakOf (s), rms (s, 0.0, 2.0));
+            check (peakOf (s) > 0.15 && peakOf (s) < 0.55,
+                   ps::midiNoteName (note) + " single-note level is usable ("
+                       + juce::String (peakOf (s), 3) + ")");
+        }
+
         ps::PhysicalEngine seven;
         seven.prepare (kFs, 512);
         auto q = baseParameters();
@@ -383,7 +398,8 @@ int main()
         seven.render (out.data(), (int) out.size());
         std::printf ("seven-string chord peak %.4f\n", peakOf (out));
         check (std::isfinite (peakOf (out)), "Chord render is finite");
-        check (peakOf (out) < 2.0, "Chord render stays within a sane range");
+        check (peakOf (out) < 0.90, "Seven-string chord keeps headroom ("
+                   + juce::String (peakOf (out), 3) + ")");
     }
 
     // ---- 8. CPU ----

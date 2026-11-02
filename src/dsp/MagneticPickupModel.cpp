@@ -88,10 +88,11 @@ void MagneticPickupModel::updateCoefficients (double sampleRate)
     makeHighPass (sampleRate, 5.0, 0.707, b0, b1, b2, a0, a1, a2);
     dcBlock.set (b0, b1, b2, a0, a1, a2);
 
-    // Level calibration: a fixed instrument trim (not tonal shaping) so a
-    // hard-picked note peaks near -16 dBFS and a seven-string chord keeps
-    // headroom before the user's output control. Measured in the physics probe.
-    outputTrim = 0.55f;
+    // Level calibration: a fixed instrument trim, not tonal shaping.  With the
+    // per-string trim in PhysicalEngine equalising the strings and the Output Level
+    // parameter at its 0 dB default, a hard single note peaks near -15 dBFS and a
+    // seven-string chord struck together near -3 dBFS, measured in the physics probe.
+    outputTrim = 1.30f;
 }
 
 float MagneticPickupModel::processSample (float emf) noexcept

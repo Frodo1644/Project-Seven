@@ -61,6 +61,29 @@ mode: the nut position is the stronger loss path, which is the dead-spot directi
 Fleischer measured. Both reflectances are below 1, so the termination cannot inject
 energy.
 
+### 1d. Output level
+
+Faraday output is proportional to string velocity, so for the same pluck displacement a
+high string produces several times the EMF of a low one. Measured single-note peaks
+before calibration (velocity 0.8, Output Level at unity):
+
+| String | B1 | E2 | A2 | D3 | G3 | B3 | E4 |
+|---|---|---|---|---|---|---|---|
+| Peak | 0.0465 | 0.0592 | 0.0762 | 0.1022 | 0.1131 | 0.1409 | 0.1813 |
+| Trim (A2 / peak) | 1.639 | 1.287 | 1.000 | 0.746 | 0.674 | 0.541 | 0.420 |
+
+Twelve dB of spread is not what a player hears, so the trim equalises the strings at the
+pickup output; it is applied to the sensed EMF and cannot feed back into the mechanical
+model. After calibration every string peaks within 0.0004 of the others:
+
+| Case | Peak | dBFS |
+|---|---|---|
+| Each single note, velocity 0.8 | 0.180 | **-14.9** |
+| Seven strings struck together, velocity 0.75 | 0.702 | **-3.1** |
+
+Both suites now assert the chord headroom (< 0.90 physics, < 0.95 engine), so a level
+regression fails the build rather than shipping inaudible.
+
 ## 2. Decay: higher partials must die first (E2, dB lost between 0.05–0.55 s and 1.20–1.70 s)
 
 | Partial | Frequency | Decay |

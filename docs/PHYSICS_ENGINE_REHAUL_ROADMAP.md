@@ -37,7 +37,7 @@ the next step is to run the structure at half rate with a polyphase interpolatio
 reflected wave.
 
 ## Phase G — Build and validation
-**DONE.** VST3 Release build, host smoke test, 111 engine checks + 35 physics checks,
+**DONE.** VST3 Release build, host smoke test, 111 engine checks + 42 physics checks,
 audio renders in `build/artifacts`, all at 0 failures.
 
 ---

@@ -76,7 +76,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
 
     layout.add (std::make_unique<AudioParameterFloat> (
         ParameterID { ParamID::outputLevel, 1 }, "Output Level",
-        NormalisableRange<float> (-24.0f, 6.0f, 0.1f), -6.0f,
+        NormalisableRange<float> (-24.0f, 6.0f, 0.1f), 0.0f,
         AudioParameterFloatAttributes().withStringFromValueFunction (
             [] (float value, int) { return String (value, 1) + " dB"; })));
 

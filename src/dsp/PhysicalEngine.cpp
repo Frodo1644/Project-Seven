@@ -18,6 +18,22 @@ constexpr double kPickupGapMm = 2.0;
 // Output calibration for the induced EMF.  This is a fixed gain, not tonal
 // shaping: it converts d(lambda)/dt into the plugin's nominal signal level.
 constexpr double kEmfReferenceHz = 1000.0;
+
+// Per-string level calibration.  Faraday output is proportional to string
+// velocity, so a hard-picked high E produces roughly four times the induced EMF
+// of a low B for the same pluck displacement.  Real instruments do not sound
+// 12 dB apart across the strings (players compensate with pole-piece height and
+// string gauge), so each string carries a fixed trim.  DERIVED from the model's
+// own measured single-note peaks at velocity 0.8, normalised to the A2 string:
+//
+//   B1 0.0465  E2 0.0592  A2 0.0762  D3 0.1022  G3 0.1131  B3 0.1409  E4 0.1813
+//
+// trim[i] = 0.0762 / peak[i].  These are level calibration only: the trim is
+// applied to the sensed EMF, so it cannot feed back into the mechanical model.
+constexpr double kStringLevelTrim[ps::kNumStrings] =
+{
+    1.639, 1.287, 1.000, 0.746, 0.674, 0.541, 0.420
+};
 }
 
 void PhysicalEngine::prepare (double sampleRate, int maxBlockSize)
@@ -394,8 +410,11 @@ void PhysicalEngine::render (float* output, int numSamples)
                 const double displacement = static_cast<double> (voice.string.senseAperture());
                 const double flux = MagneticPickupModel::fluxLinkage (displacement / kPickupGapMm);
 
-                // Faraday: e = -d(lambda)/dt.
-                emfSum += (flux - voice.fluxPrev) * emfScale;
+                // Faraday: e = -d(lambda)/dt, with the per-string level trim.
+                const int index = voice.stringIndex;
+                const double trim = (index >= 0 && index < ps::kNumStrings)
+                    ? kStringLevelTrim[index] : 1.0;
+                emfSum += (flux - voice.fluxPrev) * emfScale * trim;
                 voice.fluxPrev = flux;
             }
 

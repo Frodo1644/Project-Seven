@@ -26,11 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (reflectance 0.849 open vs 0.921 at fret 12 at 430 Hz).
 - Humbucker sensing now uses two apertures 19 mm apart, reproducing the coil-spacing
   notch, and fret contact loss plus touched-node harmonic damping.
+- Per-string level calibration and a corrected output gain stage, so the instrument
+  arrives at a usable level instead of 20 dB down.
 - Tension modulation: `df/f = beta A^2` with `beta = pi^2 E A_core / (8 L^2 T)` derived
   from string geometry, so a hard pluck starts a few cents sharp and settles as the note
   decays. Drift scales with picking force (measured 4.5 cents hard vs 2.2 cents soft on
   the low B).
-- `ProjectSevenPhysicsTests`: 27 physics checks plus WAV renders and a CPU measurement.
+- `ProjectSevenPhysicsTests`: 42 physics checks plus WAV renders and a CPU measurement.
 - Documentation: `EXISTING_ENGINE_AUDIT.md`, `PHYSICAL_ENGINE_ARCHITECTURE.md`,
   `PHYSICAL_COUPLING_SPECIFICATION.md`, `PHYSICAL_MODEL_VALIDATION.md`,
   `PHYSICS_ENGINE_REHAUL_ROADMAP.md`, `PROGRESS.md`,
@@ -55,6 +57,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   positional information at all.
 - Pickup output stage applied 1.8x gain; seven-string chords peaked at 1.36. Trimmed to
   0.55 (chord peak 0.41).
+- Output level was far too low to use. Faraday output scales with string velocity, so a
+  hard-picked high E produced four times the EMF of a low B and the strings were 12 dB
+  apart, while the master trim targeted -16 dBFS and the Output Level default cut a
+  further 6 dB: a single note peaked at -30 dBFS. Each string now carries a level trim
+  derived from its own measured peak (1.64 / 1.29 / 1.00 / 0.75 / 0.67 / 0.54 / 0.42),
+  the master trim is calibrated to that, and Output Level defaults to 0 dB. Single notes
+  now peak at -15 dBFS, a seven-string chord at -3 dBFS, with the chord headroom
+  asserted in both suites.
 
 ### Preserved
 - The 1.x engine (`StringModel`, `PickupModel`) is unchanged and selectable through

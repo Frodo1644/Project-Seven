@@ -79,7 +79,7 @@ struct EngineParameters
     float palmMute = 0.0f;
     int polyphony = 12;
     int bendRange = 2;
-    float outputGain = 0.5f;
+    float outputGain = 1.0f;
 
     // The coupled physical engine is the instrument. The original 1.x engine is
     // preserved, unmodified, behind this flag so both can be rendered from the
